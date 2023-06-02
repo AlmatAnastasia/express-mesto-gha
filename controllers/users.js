@@ -1,12 +1,21 @@
 const userModel = require('../models/user');
+const STATUS_CODES = require('../utils/costants');
+const BadRequestError = require('../errors/badRequestError');
+const NotFoundError = require('../errors/notFoundError');
 
-// вернуть всех пользователей
-const getUsers = async (req, res) => {
-  try {
-    const users = await userModel.find({});
-    res.send({ data: users });
-  } catch (err) {
-    res.status(500).send({
+// обработка ошибок
+const errorHandlingWithDataUSERS = (res, err, next) => {
+  if (err.name === 'BadRequestError') {
+    res.status(STATUS_CODES.BAD_REQUEST).send({
+      error: {
+        message: 'Переданы некорректные данные',
+        err: err.message,
+        stack: err.stack,
+      },
+    });
+    next(err);
+  } else {
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
       message: 'Внутренняя ошибка сервера',
       err: err.message,
       stack: err.stack,
@@ -14,10 +23,49 @@ const getUsers = async (req, res) => {
   }
 };
 
+const errorHandlingWithDataME = (res, err, next) => {
+  if (err.name === 'BadRequestError') {
+    res.status(STATUS_CODES.BAD_REQUEST).send({
+      error: {
+        message: 'Переданы некорректные данные',
+        err: err.message,
+        stack: err.stack,
+      },
+    });
+    next(err);
+  } else if (err.name === 'CastError') {
+    res.status(STATUS_CODES.NOT_FOUND).send({
+      error: {
+        message: 'Пользователь не найден',
+        err: err.message,
+        stack: err.stack,
+      },
+    });
+    next(err);
+  } else {
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+      message: 'Внутренняя ошибка сервера',
+      err: err.message,
+      stack: err.stack,
+    });
+  }
+};
+
+// вернуть всех пользователей
+const getUsers = async (req, res, next) => {
+  try {
+    const users = await userModel.find({});
+    res.send({ data: users });
+  } catch (err) {
+    errorHandlingWithDataUSERS(res, err, next);
+  }
+};
+
 // вернуть пользователя по _id
-const getUserByID = (req, res) => {
+const getUserByID = (req, res, next) => {
+  const id = req.params.userId;
   userModel
-    .findById(req.params.userId)
+    .findById(id)
     .orFail(() => {
       throw new Error('Не найдено');
     })
@@ -25,69 +73,87 @@ const getUserByID = (req, res) => {
       res.send({ data: user });
     })
     .catch((err) => {
-      if (err.message === 'Не найдено') {
-        res.status(404).send({
-          message: 'Пользователь не найден',
+      if (err.name === 'CastError') {
+        res.status(STATUS_CODES.NOT_FOUND).send({
+          error: {
+            message: 'Пользователь не найден',
+            err: err.message,
+            stack: err.stack,
+          },
         });
-        return;
+        next(err);
+      } else {
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+          message: 'Внутренняя ошибка сервера',
+          err: err.message,
+          stack: err.stack,
+        });
       }
-      res.status(500).send({
-        message: 'Внутренняя ошибка сервера',
-        err: err.message,
-        stack: err.stack,
-      });
     });
 };
 
 // создать пользователя
-const postUser = (req, res) => {
+const postUser = (req, res, next) => {
+  const { name, about, avatar } = req.body;
   userModel
-    .create(req.body)
+    .create({ name, about, avatar })
     .then((user) => {
-      res.status(201).send({ data: user });
+      res.send({ data: user });
     })
     .catch((err) => {
-      res.status(500).send({
-        message: 'Внутренняя ошибка сервера',
-        err: err.message,
-        stack: err.stack,
-      });
+      errorHandlingWithDataUSERS(res, err, next);
     });
 };
 
 // обновить профиль
-const patchUserMe = (req, res) => {
+// { new: true, runValidators: true } - обновление, валидация
+const patchUserMe = (req, res, next) => {
   const owner = req.user._id;
   const { name, about } = req.body;
+  const bodyName = req.body.name;
+  const bodyAbout = req.body.about;
   userModel
-    .findByIdAndUpdate(owner, { name, about }, { new: true })
+    .findByIdAndUpdate(
+      owner,
+      { name, about },
+      { new: true, runValidators: true },
+    )
     .then((user) => {
-      res.status(201).send({ data: user });
+      if (!user) {
+        throw new NotFoundError('Пользователь не найден');
+      }
+      if (bodyName === undefined || bodyAbout === undefined) {
+        throw new BadRequestError('Переданы некорректные данные');
+      }
+      res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      res.status(500).send({
-        message: 'Внутренняя ошибка сервера',
-        err: err.message,
-        stack: err.stack,
-      });
+      errorHandlingWithDataME(res, err, next);
     });
 };
 
 // обновить аватар
-const patchAvatar = (req, res) => {
+const patchAvatar = (req, res, next) => {
   const owner = req.user._id;
   const { avatar } = req.body;
+  const bodyAvatar = req.body.avatar;
   userModel
-    .findByIdAndUpdate(owner, { avatar }, { new: true })
+    .findByIdAndUpdate(
+      owner,
+      { avatar },
+      { new: true, runValidators: true },
+    )
     .then((user) => {
-      res.status(201).send({ data: user });
+      if (!user) {
+        throw new NotFoundError('Пользователь не найден');
+      }
+      if (bodyAvatar === undefined) {
+        throw new BadRequestError('Переданы некорректные данные');
+      }
+      res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      res.status(500).send({
-        message: 'Внутренняя ошибка сервера',
-        err: err.message,
-        stack: err.stack,
-      });
+      errorHandlingWithDataME(res, err, next);
     });
 };
 

@@ -21,5 +21,6 @@ app.use(userRouter);
 app.use(cardRouter);
 
 app.listen(3000, () => {
+  // eslint-disable-next-line no-console
   console.log('Сервер запущен по порту 3000');
 });

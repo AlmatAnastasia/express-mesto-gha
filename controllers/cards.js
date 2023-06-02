@@ -1,16 +1,60 @@
 const cardModel = require('../models/card');
+const STATUS_CODES = require('../utils/costants');
 
 // вернуть все карточки
-const getCards = async (req, res) => {
-  try {
-    const cards = await cardModel.find({});
-    res.send({ data: cards });
-  } catch (err) {
-    res.status(500).send({
+const errorHandlingWithDataUSERS = (res, err, next) => {
+  if (err.name === 'BadRequestError') {
+    res.status(STATUS_CODES.BAD_REQUEST).send({
+      error: {
+        message: 'Переданы некорректные данные',
+        err: err.message,
+        stack: err.stack,
+      },
+    });
+    next(err);
+  } else {
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
       message: 'Внутренняя ошибка сервера',
       err: err.message,
       stack: err.stack,
     });
+  }
+};
+
+const errorHandlingWithDataLIKES = (res, err, next) => {
+  if (err.name === 'BadRequestError') {
+    res.status(STATUS_CODES.BAD_REQUEST).send({
+      error: {
+        message: 'Переданы некорректные данные',
+        err: err.message,
+        stack: err.stack,
+      },
+    });
+    next(err);
+  } else if (err.name === 'CastError') {
+    res.status(STATUS_CODES.NOT_FOUND).send({
+      error: {
+        message: 'Пользователь не найден',
+        err: err.message,
+        stack: err.stack,
+      },
+    });
+    next(err);
+  } else {
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+      message: 'Внутренняя ошибка сервера',
+      err: err.message,
+      stack: err.stack,
+    });
+  }
+};
+
+const getCards = async (req, res, next) => {
+  try {
+    const cards = await cardModel.find({});
+    res.send({ data: cards });
+  } catch (err) {
+    errorHandlingWithDataUSERS(res, err, next);
   }
 };
 
@@ -33,22 +77,20 @@ const deleteCardByID = (req, res) => {
         .then(() => res.send({ data: card }));
     })
     .catch((err) => {
-      if (err.message === 'Не найдено') {
-        res.status(404).send({
-          message: 'Карточка не найдена',
+      if (err.name === 'CastError') {
+        res.status(STATUS_CODES.NOT_FOUND).send({
+          error: {
+            message: 'Карточка не найдена',
+            err: err.message,
+            stack: err.stack,
+          },
         });
-        return;
       }
-      res.status(500).send({
-        message: 'Внутренняя ошибка сервера',
-        err: err.message,
-        stack: err.stack,
-      });
     });
 };
 
 // создать карточку
-const postCard = (req, res) => {
+const postCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   cardModel
@@ -57,16 +99,12 @@ const postCard = (req, res) => {
       res.status(201).send({ data: card });
     })
     .catch((err) => {
-      res.status(500).send({
-        message: 'Внутренняя ошибка сервера',
-        err: err.message,
-        stack: err.stack,
-      });
+      errorHandlingWithDataUSERS(res, err, next);
     });
 };
 
 // поставить лайк карточке
-const putCardLike = (req, res) => {
+const putCardLike = (req, res, next) => {
   const owner = req.user._id;
   cardModel
     .findByIdAndUpdate(
@@ -79,16 +117,12 @@ const putCardLike = (req, res) => {
       res.status(201).send({ data: card });
     })
     .catch((err) => {
-      res.status(500).send({
-        message: 'Внутренняя ошибка сервера',
-        err: err.message,
-        stack: err.stack,
-      });
+      errorHandlingWithDataLIKES(res, err, next);
     });
 };
 
 // убрать лайк с карточки
-const deleteCardLike = (req, res) => {
+const deleteCardLike = (req, res, next) => {
   const owner = req.user._id;
   cardModel
     .findByIdAndUpdate(
@@ -100,11 +134,7 @@ const deleteCardLike = (req, res) => {
       res.status(201).send({ data: card });
     })
     .catch((err) => {
-      res.status(500).send({
-        message: 'Внутренняя ошибка сервера',
-        err: err.message,
-        stack: err.stack,
-      });
+      errorHandlingWithDataLIKES(res, err, next);
     });
 };
 
