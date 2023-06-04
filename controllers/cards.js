@@ -3,7 +3,7 @@ const STATUS_CODES = require('../utils/costants');
 
 // вернуть все карточки
 const errorHandlingWithDataUSERS = (res, err, next) => {
-  if (err.name === 'BadRequestError') {
+  if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       error: {
         message: 'Переданы некорректные данные',
@@ -22,7 +22,9 @@ const errorHandlingWithDataUSERS = (res, err, next) => {
 };
 
 const errorHandlingWithDataLIKES = (res, err, next) => {
-  if (err.name === 'BadRequestError') {
+  // DocumentNotFoundError (400) - получение пользователя с некорректным id
+  // CastError (404) - получение пользователя с несуществующим в БД id
+  if (err.name === 'DocumentNotFoundError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       error: {
         message: 'Переданы некорректные данные',
@@ -34,7 +36,7 @@ const errorHandlingWithDataLIKES = (res, err, next) => {
   } else if (err.name === 'CastError') {
     res.status(STATUS_CODES.NOT_FOUND).send({
       error: {
-        message: 'Пользователь не найден',
+        message: 'Карточка не найдена',
         err: err.message,
         stack: err.stack,
       },
@@ -52,7 +54,7 @@ const errorHandlingWithDataLIKES = (res, err, next) => {
 const getCards = async (req, res, next) => {
   try {
     const cards = await cardModel.find({});
-    res.send({ data: cards });
+    res.status(STATUS_CODES.OK).send({ data: cards });
   } catch (err) {
     errorHandlingWithDataUSERS(res, err, next);
   }
@@ -64,20 +66,20 @@ const deleteCardByID = (req, res) => {
   cardModel
     .findById(req.params.cardId)
     .orFail(() => {
-      throw new Error('Не найдено');
+      res.status(STATUS_CODES.NOT_FOUND);
     })
     .then((card) => {
       if (JSON.stringify(card.owner) !== `"${owner}"`) {
-        res.send({
+        res.status(STATUS_CODES.NOT_FOUND).send({
           message: 'Чужая карточка - нельзя удалить',
         });
       }
       cardModel
         .findByIdAndRemove(req.params.cardId)
-        .then(() => res.send({ data: card }));
+        .then(() => res.status(STATUS_CODES.OK).send({ data: card }));
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err.name === 'CastError' || err.name === 'DocumentNotFoundError') {
         res.status(STATUS_CODES.NOT_FOUND).send({
           error: {
             message: 'Карточка не найдена',
@@ -96,7 +98,7 @@ const postCard = (req, res, next) => {
   cardModel
     .create({ name, link, owner })
     .then((card) => {
-      res.status(201).send({ data: card });
+      res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
       errorHandlingWithDataUSERS(res, err, next);
@@ -113,8 +115,11 @@ const putCardLike = (req, res, next) => {
       { $addToSet: { likes: owner } },
       { new: true },
     )
+    .orFail(() => {
+      res.status(STATUS_CODES.NOT_FOUND);
+    })
     .then((card) => {
-      res.status(201).send({ data: card });
+      res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
       errorHandlingWithDataLIKES(res, err, next);
@@ -127,11 +132,15 @@ const deleteCardLike = (req, res, next) => {
   cardModel
     .findByIdAndUpdate(
       req.params.cardId,
-      { $pull: { likes: owner } }, // $pull - убрать _id из массива (Mongo)
+      // $pull - убрать _id из массива (Mongo)
+      { $pull: { likes: owner } },
       { new: true },
     )
+    .orFail(() => {
+      res.status(STATUS_CODES.NOT_FOUND);
+    })
     .then((card) => {
-      res.status(201).send({ data: card });
+      res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
       errorHandlingWithDataLIKES(res, err, next);

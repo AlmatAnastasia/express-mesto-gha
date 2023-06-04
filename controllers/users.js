@@ -5,7 +5,7 @@ const NotFoundError = require('../errors/notFoundError');
 
 // обработка ошибок
 const errorHandlingWithDataUSERS = (res, err, next) => {
-  if (err.name === 'BadRequestError') {
+  if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       error: {
         message: 'Переданы некорректные данные',
@@ -33,7 +33,7 @@ const errorHandlingWithDataME = (res, err, next) => {
       },
     });
     next(err);
-  } else if (err.name === 'CastError') {
+  } else if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.NOT_FOUND).send({
       error: {
         message: 'Пользователь не найден',
@@ -55,7 +55,7 @@ const errorHandlingWithDataME = (res, err, next) => {
 const getUsers = async (req, res, next) => {
   try {
     const users = await userModel.find({});
-    res.send({ data: users });
+    res.status(STATUS_CODES.OK).send({ data: users });
   } catch (err) {
     errorHandlingWithDataUSERS(res, err, next);
   }
@@ -67,13 +67,24 @@ const getUserByID = (req, res, next) => {
   userModel
     .findById(id)
     .orFail(() => {
-      throw new Error('Не найдено');
+      res.status(STATUS_CODES.NOT_FOUND);
     })
     .then((user) => {
-      res.send({ data: user });
+      res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
+      // DocumentNotFoundError (400) - получение пользователя с некорректным id
+      // CastError (404) - получение пользователя с несуществующим в БД id
+      if (err.name === 'DocumentNotFoundError') {
+        res.status(STATUS_CODES.BAD_REQUEST).send({
+          error: {
+            message: 'Переданы некорректные данные',
+            err: err.message,
+            stack: err.stack,
+          },
+        });
+        next(err);
+      } else if (err.name === 'CastError') {
         res.status(STATUS_CODES.NOT_FOUND).send({
           error: {
             message: 'Пользователь не найден',
@@ -98,7 +109,7 @@ const postUser = (req, res, next) => {
   userModel
     .create({ name, about, avatar })
     .then((user) => {
-      res.send({ data: user });
+      res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
       errorHandlingWithDataUSERS(res, err, next);
@@ -110,8 +121,6 @@ const postUser = (req, res, next) => {
 const patchUserMe = (req, res, next) => {
   const owner = req.user._id;
   const { name, about } = req.body;
-  const bodyName = req.body.name;
-  const bodyAbout = req.body.about;
   userModel
     .findByIdAndUpdate(
       owner,
@@ -119,12 +128,6 @@ const patchUserMe = (req, res, next) => {
       { new: true, runValidators: true },
     )
     .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Пользователь не найден');
-      }
-      if (bodyName === undefined || bodyAbout === undefined) {
-        throw new BadRequestError('Переданы некорректные данные');
-      }
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
