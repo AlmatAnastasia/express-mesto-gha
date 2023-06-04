@@ -19,7 +19,7 @@ const errorHandlingWithDataUSERS = (res, err, next) => {
   }
 };
 
-const errorHandlingWithDataLIKES = (res, err, next) => {
+const errorHandlingWithData = (res, err, next) => {
   // CastError (400) - добавление/удаление лайка с некорректным id карточки
   // DocumentNotFoundError (404) - добавление/удаление лайка с несуществующим в БД id карточки
   if (err.name === 'CastError') {
@@ -55,7 +55,7 @@ const getCards = async (req, res, next) => {
 };
 
 // удалить карточку по идентификатору
-const deleteCardByID = (req, res) => {
+const deleteCardByID = (req, res, next) => {
   const owner = req.user._id;
   cardModel
     .findById(req.params.cardId)
@@ -73,19 +73,7 @@ const deleteCardByID = (req, res) => {
         .then(() => res.status(STATUS_CODES.OK).send({ data: card }));
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(STATUS_CODES.BAD_REQUEST).send({
-          message: 'Переданы некорректные данные',
-          err: err.message,
-          stack: err.stack,
-        });
-      } else {
-        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
-          message: 'Внутренняя ошибка сервера',
-          err: err.message,
-          stack: err.stack,
-        });
-      }
+      errorHandlingWithData(res, err, next);
     });
 };
 
@@ -120,7 +108,7 @@ const putCardLike = (req, res, next) => {
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      errorHandlingWithDataLIKES(res, err, next);
+      errorHandlingWithData(res, err, next);
     });
 };
 
@@ -141,8 +129,13 @@ const deleteCardLike = (req, res, next) => {
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      errorHandlingWithDataLIKES(res, err, next);
+      errorHandlingWithData(res, err, next);
     });
+};
+
+// обработать неправильные пути
+const getNotFound = (req, res) => {
+  res.status(STATUS_CODES.NOT_FOUND).send({ message: 'Путь не найден' });
 };
 
 module.exports = {
@@ -151,4 +144,5 @@ module.exports = {
   postCard,
   putCardLike,
   deleteCardLike,
+  getNotFound,
 };

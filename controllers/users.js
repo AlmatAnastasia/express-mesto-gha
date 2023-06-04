@@ -21,7 +21,7 @@ const errorHandlingWithDataUSERS = (res, err, next) => {
   }
 };
 
-const errorHandlingWithDataME = (res, err, next) => {
+const errorHandlingWithData = (res, err, next) => {
   if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
@@ -121,7 +121,7 @@ const patchUserMe = (req, res, next) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithDataME(res, err, next);
+      errorHandlingWithData(res, err, next);
     });
 };
 
@@ -146,8 +146,13 @@ const patchAvatar = (req, res, next) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithDataME(res, err, next);
+      errorHandlingWithData(res, err, next);
     });
+};
+
+// обработать неправильные пути
+const getNotFound = (req, res) => {
+  res.status(STATUS_CODES.NOT_FOUND).send({ message: 'Путь не найден' });
 };
 
 module.exports = {
@@ -156,4 +161,5 @@ module.exports = {
   postUser,
   patchUserMe,
   patchAvatar,
+  getNotFound,
 };
