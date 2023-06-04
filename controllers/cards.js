@@ -79,6 +79,12 @@ const deleteCardByID = (req, res) => {
           err: err.message,
           stack: err.stack,
         });
+      } else {
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+          message: 'Внутренняя ошибка сервера',
+          err: err.message,
+          stack: err.stack,
+        });
       }
     });
 };
