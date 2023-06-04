@@ -20,16 +20,16 @@ const errorHandlingWithDataUSERS = (res, err, next) => {
 };
 
 const errorHandlingWithDataLIKES = (res, err, next) => {
-  // DocumentNotFoundError (404) - получение пользователя с некорректным id
-  // CastError (400) - получение пользователя с несуществующим в БД id
-  if (err.name === 'DocumentNotFoundError') {
+  // CastError (400) - добавление/удаление лайка с некорректным id карточки
+  // DocumentNotFoundError (404) - добавление/удаление лайка с несуществующим в БД id карточки
+  if (err.name === 'CastError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
       err: err.message,
       stack: err.stack,
     });
     next(err);
-  } else if (err.name === 'CastError') {
+  } else if (err.name === 'DocumentNotFoundError') {
     res.status(STATUS_CODES.NOT_FOUND).send({
       message: 'Карточка не найдена',
       err: err.message,
@@ -74,8 +74,8 @@ const deleteCardByID = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(STATUS_CODES.NOT_FOUND).send({
-          message: 'Карточка не найдена',
+        res.status(STATUS_CODES.BAD_REQUEST).send({
+          message: 'Переданы некорректные данные',
           err: err.message,
           stack: err.stack,
         });
