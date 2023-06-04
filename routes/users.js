@@ -19,8 +19,6 @@ router.patch('/users/me', patchUserMe);
 // обновить аватар
 router.patch('/users/me/avatar', patchAvatar);
 // обработать неправильные пути
-router.get('*', getNotFound);
-router.post('*', getNotFound);
 router.patch('*', getNotFound);
 
 module.exports = router;

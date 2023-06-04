@@ -133,16 +133,10 @@ const deleteCardLike = (req, res, next) => {
     });
 };
 
-// обработать неправильные пути
-const getNotFound = (req, res) => {
-  res.status(STATUS_CODES.NOT_FOUND).send({ message: 'Путь не найден' });
-};
-
 module.exports = {
   getCards,
   deleteCardByID,
   postCard,
   putCardLike,
   deleteCardLike,
-  getNotFound,
 };
