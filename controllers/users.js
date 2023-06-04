@@ -7,11 +7,9 @@ const NotFoundError = require('../errors/notFoundError');
 const errorHandlingWithDataUSERS = (res, err, next) => {
   if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
-      error: {
-        message: 'Переданы некорректные данные',
-        err: err.message,
-        stack: err.stack,
-      },
+      message: 'Переданы некорректные данные',
+      err: err.message,
+      stack: err.stack,
     });
     next(err);
   } else {
@@ -26,20 +24,16 @@ const errorHandlingWithDataUSERS = (res, err, next) => {
 const errorHandlingWithDataME = (res, err, next) => {
   if (err.name === 'BadRequestError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
-      error: {
-        message: 'Переданы некорректные данные',
-        err: err.message,
-        stack: err.stack,
-      },
+      message: 'Переданы некорректные данные',
+      err: err.message,
+      stack: err.stack,
     });
     next(err);
   } else if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.NOT_FOUND).send({
-      error: {
-        message: 'Пользователь не найден',
-        err: err.message,
-        stack: err.stack,
-      },
+      message: 'Пользователь не найден',
+      err: err.message,
+      stack: err.stack,
     });
     next(err);
   } else {
@@ -75,22 +69,18 @@ const getUserByID = (req, res, next) => {
     .catch((err) => {
       // DocumentNotFoundError (400) - получение пользователя с некорректным id
       // CastError (404) - получение пользователя с несуществующим в БД id
-      if (err.name === 'DocumentNotFoundError') {
+      if (err.name === 'CastError') {
         res.status(STATUS_CODES.BAD_REQUEST).send({
-          error: {
-            message: 'Переданы некорректные данные',
-            err: err.message,
-            stack: err.stack,
-          },
+          message: 'Переданы некорректные данные',
+          err: err.message,
+          stack: err.stack,
         });
         next(err);
-      } else if (err.name === 'CastError') {
+      } else if (err.name === 'DocumentNotFoundError') {
         res.status(STATUS_CODES.NOT_FOUND).send({
-          error: {
-            message: 'Пользователь не найден',
-            err: err.message,
-            stack: err.stack,
-          },
+          message: 'Пользователь не найден',
+          err: err.message,
+          stack: err.stack,
         });
         next(err);
       } else {
