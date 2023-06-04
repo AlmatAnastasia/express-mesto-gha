@@ -23,8 +23,11 @@
 
 <div id="start"></div>
 <h2>Запуск проекта</h2>
-<p>`npm run start` — запускает сервер</br>  
-`npm run dev` — запускает сервер с hot-reload</p>
+<p>
+`npm run start` — запускает сервер</br>  
+`npm run dev` — запускает сервер с hot-reload</br>
+`npm run lint` — выполняется проверка проекта</br>
+</p>
 
 <div id="demo"></div>
 <h2>Демонстрация</h2>
