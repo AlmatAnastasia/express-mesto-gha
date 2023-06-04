@@ -20,8 +20,8 @@ const errorHandlingWithDataUSERS = (res, err, next) => {
 };
 
 const errorHandlingWithDataLIKES = (res, err, next) => {
-  // DocumentNotFoundError (400) - получение пользователя с некорректным id
-  // CastError (404) - получение пользователя с несуществующим в БД id
+  // DocumentNotFoundError (404) - получение пользователя с некорректным id
+  // CastError (400) - получение пользователя с несуществующим в БД id
   if (err.name === 'DocumentNotFoundError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
@@ -73,7 +73,7 @@ const deleteCardByID = (req, res) => {
         .then(() => res.status(STATUS_CODES.OK).send({ data: card }));
     })
     .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'DocumentNotFoundError') {
+      if (err.name === 'CastError') {
         res.status(STATUS_CODES.NOT_FOUND).send({
           message: 'Карточка не найдена',
           err: err.message,

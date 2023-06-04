@@ -22,14 +22,14 @@ const errorHandlingWithDataUSERS = (res, err, next) => {
 };
 
 const errorHandlingWithDataME = (res, err, next) => {
-  if (err.name === 'BadRequestError') {
+  if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
       err: err.message,
       stack: err.stack,
     });
     next(err);
-  } else if (err.name === 'ValidationError') {
+  } else if (err.name === 'BadRequestError') {
     res.status(STATUS_CODES.NOT_FOUND).send({
       message: 'Пользователь не найден',
       err: err.message,
@@ -67,8 +67,8 @@ const getUserByID = (req, res, next) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      // DocumentNotFoundError (400) - получение пользователя с некорректным id
-      // CastError (404) - получение пользователя с несуществующим в БД id
+      // DocumentNotFoundError (404) - получение пользователя с некорректным id
+      // CastError (400) - получение пользователя с несуществующим в БД id
       if (err.name === 'CastError') {
         res.status(STATUS_CODES.BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
