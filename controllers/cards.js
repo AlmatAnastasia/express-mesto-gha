@@ -1,4 +1,5 @@
 const fs = require('fs');
+const mongoose = require('mongoose');
 const cardModel = require('../models/card');
 const STATUS_CODES = require('../utils/costants');
 
@@ -56,7 +57,9 @@ const getCards = async (req, res) => {
     const cards = await cardModel.find({});
     res.status(STATUS_CODES.OK).send({ data: cards });
   } catch (err) {
-    errorHandlingWithDataUSERS(req, res, err);
+    if (err instanceof mongoose.Error) {
+      errorHandlingWithDataUSERS(req, res, err);
+    }
   }
 };
 
@@ -79,7 +82,9 @@ const deleteCardByID = (req, res) => {
         .then(() => res.status(STATUS_CODES.OK).send({ data: card }));
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      if (err instanceof mongoose.Error) {
+        errorHandlingWithData(req, res, err);
+      }
     });
 };
 
@@ -93,7 +98,9 @@ const postCard = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      errorHandlingWithDataUSERS(req, res, err);
+      if (err instanceof mongoose.Error) {
+        errorHandlingWithDataUSERS(req, res, err);
+      }
     });
 };
 
@@ -114,7 +121,9 @@ const putCardLike = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      if (err instanceof mongoose.Error) {
+        errorHandlingWithData(req, res, err);
+      }
     });
 };
 
@@ -135,7 +144,9 @@ const deleteCardLike = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      if (err instanceof mongoose.Error) {
+        errorHandlingWithData(req, res, err);
+      }
     });
 };
 

@@ -1,8 +1,7 @@
 const fs = require('fs');
+const mongoose = require('mongoose');
 const userModel = require('../models/user');
 const STATUS_CODES = require('../utils/costants');
-// const BadRequestError = require('../errors/badRequestError');
-// const NotFoundError = require('../errors/notFoundError');
 
 // обработка ошибок
 const writeLog = (req, err) => {
@@ -56,7 +55,9 @@ const getUsers = async (req, res) => {
     const users = await userModel.find({});
     res.status(STATUS_CODES.OK).send({ data: users });
   } catch (err) {
-    errorHandlingWithDataUSERS(req, res, err);
+    if (err instanceof mongoose.Error) {
+      errorHandlingWithDataUSERS(req, res, err);
+    }
   }
 };
 
@@ -72,22 +73,24 @@ const getUserByID = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      // DocumentNotFoundError (404) - получение пользователя с некорректным id
-      // CastError (400) - получение пользователя с несуществующим в БД id
-      if (err.name === 'CastError') {
-        res.status(STATUS_CODES.BAD_REQUEST).send({
-          message: 'Переданы некорректные данные',
-        });
-      } else if (err.name === 'DocumentNotFoundError') {
-        res.status(STATUS_CODES.NOT_FOUND).send({
-          message: 'Пользователь не найден',
-        });
-      } else {
-        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
-          message: 'Внутренняя ошибка сервера',
-        });
+      if (err instanceof mongoose.Error) {
+        // DocumentNotFoundError (404) - получение пользователя с некорректным id
+        // CastError (400) - получение пользователя с некорректным id
+        if (err.name === 'CastError') {
+          res.status(STATUS_CODES.BAD_REQUEST).send({
+            message: 'Переданы некорректные данные',
+          });
+        } else if (err.name === 'DocumentNotFoundError') {
+          res.status(STATUS_CODES.NOT_FOUND).send({
+            message: 'Пользователь не найден',
+          });
+        } else {
+          res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+            message: 'Внутренняя ошибка сервера',
+          });
+        }
+        writeLog(req, err);
       }
-      writeLog(req, err);
     });
 };
 
@@ -100,7 +103,9 @@ const postUser = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithDataUSERS(req, res, err);
+      if (err instanceof mongoose.Error) {
+        errorHandlingWithDataUSERS(req, res, err);
+      }
     });
 };
 
@@ -119,7 +124,9 @@ const patchUserMe = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      if (err instanceof mongoose.Error) {
+        errorHandlingWithData(req, res, err);
+      }
     });
 };
 
@@ -128,16 +135,14 @@ const patchAvatar = (req, res) => {
   const owner = req.user._id;
   const { avatar } = req.body;
   userModel
-    .findByIdAndUpdate(
-      owner,
-      { avatar },
-      { new: true, runValidators: true },
-    )
+    .findByIdAndUpdate(owner, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      if (err instanceof mongoose.Error) {
+        errorHandlingWithData(req, res, err);
+      }
     });
 };
 
