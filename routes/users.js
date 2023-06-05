@@ -5,20 +5,17 @@ const {
   postUser,
   patchUserMe,
   patchAvatar,
-  getNotFound,
 } = require('../controllers/users');
 
 // вернуть всех пользователей
-router.get('/users', getUsers);
+router.get('', getUsers);
 // вернуть пользователя по _id
-router.get('/users/:userId', getUserByID);
+router.get('/:userId', getUserByID);
 // создать пользователя
-router.post('/users', postUser);
+router.post('', postUser);
 // обновить профиль
-router.patch('/users/me', patchUserMe);
+router.patch('/me', patchUserMe);
 // обновить аватар
-router.patch('/users/me/avatar', patchAvatar);
-// обработать неправильные пути
-router.patch('*', getNotFound);
+router.patch('/me/avatar', patchAvatar);
 
 module.exports = router;

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const ObjectId = require('mongodb').ObjectID;
 // создать схему cardSchema
 const cardSchema = new mongoose.Schema({
   // поля схемы карточки:
@@ -18,10 +17,12 @@ const cardSchema = new mongoose.Schema({
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
+    ref: 'card',
   },
   likes: {
-    type: [ObjectId],
+    type: mongoose.Schema.Types.ObjectId,
     default: [],
+    ref: 'card',
   },
   createdAt: {
     type: Date,

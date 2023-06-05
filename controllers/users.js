@@ -1,62 +1,67 @@
+const fs = require('fs');
 const userModel = require('../models/user');
 const STATUS_CODES = require('../utils/costants');
-const BadRequestError = require('../errors/badRequestError');
-const NotFoundError = require('../errors/notFoundError');
+// const BadRequestError = require('../errors/badRequestError');
+// const NotFoundError = require('../errors/notFoundError');
 
 // обработка ошибок
-const errorHandlingWithDataUSERS = (res, err, next) => {
+const writeLog = (req, err) => {
+  fs.writeFile(
+    'data.json',
+    JSON.stringify(`{
+    url: ${req.originalUrl},
+    err: ${err.message},
+    stack: ${err.stack},
+  }`),
+    (error) => {
+      // eslint-disable-next-line no-console
+      if (error) console.log(error);
+    },
+  );
+};
+
+const errorHandlingWithDataUSERS = (req, res, err) => {
   if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
-      err: err.message,
-      stack: err.stack,
     });
-    next(err);
   } else {
     res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
       message: 'Внутренняя ошибка сервера',
-      err: err.message,
-      stack: err.stack,
     });
   }
+  writeLog(req, err);
 };
 
-const errorHandlingWithData = (res, err, next) => {
+const errorHandlingWithData = (req, res, err) => {
   if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
-      err: err.message,
-      stack: err.stack,
     });
-    next(err);
   } else if (err.name === 'BadRequestError') {
     res.status(STATUS_CODES.NOT_FOUND).send({
       message: 'Пользователь не найден',
-      err: err.message,
-      stack: err.stack,
     });
-    next(err);
   } else {
     res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
       message: 'Внутренняя ошибка сервера',
-      err: err.message,
-      stack: err.stack,
     });
   }
+  writeLog(req, err);
 };
 
 // вернуть всех пользователей
-const getUsers = async (req, res, next) => {
+const getUsers = async (req, res) => {
   try {
     const users = await userModel.find({});
     res.status(STATUS_CODES.OK).send({ data: users });
   } catch (err) {
-    errorHandlingWithDataUSERS(res, err, next);
+    errorHandlingWithDataUSERS(req, res, err);
   }
 };
 
 // вернуть пользователя по _id
-const getUserByID = (req, res, next) => {
+const getUserByID = (req, res) => {
   const id = req.params.userId;
   userModel
     .findById(id)
@@ -72,29 +77,22 @@ const getUserByID = (req, res, next) => {
       if (err.name === 'CastError') {
         res.status(STATUS_CODES.BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
-          err: err.message,
-          stack: err.stack,
         });
-        next(err);
       } else if (err.name === 'DocumentNotFoundError') {
         res.status(STATUS_CODES.NOT_FOUND).send({
           message: 'Пользователь не найден',
-          err: err.message,
-          stack: err.stack,
         });
-        next(err);
       } else {
         res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
           message: 'Внутренняя ошибка сервера',
-          err: err.message,
-          stack: err.stack,
         });
       }
+      writeLog(req, err);
     });
 };
 
 // создать пользователя
-const postUser = (req, res, next) => {
+const postUser = (req, res) => {
   const { name, about, avatar } = req.body;
   userModel
     .create({ name, about, avatar })
@@ -102,13 +100,13 @@ const postUser = (req, res, next) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithDataUSERS(res, err, next);
+      errorHandlingWithDataUSERS(req, res, err);
     });
 };
 
 // обновить профиль
 // { new: true, runValidators: true } - обновление, валидация
-const patchUserMe = (req, res, next) => {
+const patchUserMe = (req, res) => {
   const owner = req.user._id;
   const { name, about } = req.body;
   userModel
@@ -121,15 +119,14 @@ const patchUserMe = (req, res, next) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithData(res, err, next);
+      errorHandlingWithData(req, res, err);
     });
 };
 
 // обновить аватар
-const patchAvatar = (req, res, next) => {
+const patchAvatar = (req, res) => {
   const owner = req.user._id;
   const { avatar } = req.body;
-  const bodyAvatar = req.body.avatar;
   userModel
     .findByIdAndUpdate(
       owner,
@@ -137,22 +134,11 @@ const patchAvatar = (req, res, next) => {
       { new: true, runValidators: true },
     )
     .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Пользователь не найден');
-      }
-      if (bodyAvatar === undefined) {
-        throw new BadRequestError('Переданы некорректные данные');
-      }
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithData(res, err, next);
+      errorHandlingWithData(req, res, err);
     });
-};
-
-// обработать неправильные пути
-const getNotFound = (req, res) => {
-  res.status(STATUS_CODES.NOT_FOUND).send({ message: 'Путь не найден' });
 };
 
 module.exports = {
@@ -161,5 +147,4 @@ module.exports = {
   postUser,
   patchUserMe,
   patchAvatar,
-  getNotFound,
 };

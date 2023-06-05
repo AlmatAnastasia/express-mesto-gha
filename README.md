@@ -26,7 +26,6 @@
 <p>
 `npm run start` — запускает сервер</br>  
 `npm run dev` — запускает сервер с hot-reload</br>
-`npm run lint` — выполняется проверка проекта</br>
 </p>
 
 <div id="demo"></div>

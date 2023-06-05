@@ -8,14 +8,14 @@ const {
 } = require('../controllers/cards');
 
 // вернуть все карточки
-router.get('/cards', getCards);
+router.get('', getCards);
 // удалить карточку по идентификатору
-router.delete('/cards/:cardId', deleteCardByID);
+router.delete('/:cardId', deleteCardByID);
 // создать карточку
-router.post('/cards', postCard);
+router.post('', postCard);
 // поставить лайк карточке
-router.put('/cards/:cardId/likes', putCardLike);
+router.put('/:cardId/likes', putCardLike);
 // убрать лайк с карточки
-router.delete('/cards/:cardId/likes', deleteCardLike);
+router.delete('/:cardId/likes', deleteCardLike);
 
 module.exports = router;
