@@ -37,10 +37,6 @@ const errorHandlingWithData = (req, res, err) => {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
     });
-  } else if (err.name === 'BadRequestError') {
-    res.status(STATUS_CODES.NOT_FOUND).send({
-      message: 'Пользователь не найден',
-    });
   } else {
     res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
       message: 'Внутренняя ошибка сервера',
@@ -74,13 +70,8 @@ const getUserByID = (req, res) => {
     })
     .catch((err) => {
       if (err instanceof mongoose.Error) {
-        // DocumentNotFoundError (404) - получение пользователя с некорректным id
-        // CastError (400) - получение пользователя с некорректным id
+        // CastError (404) - получение пользователя с некорректным id
         if (err.name === 'CastError') {
-          res.status(STATUS_CODES.BAD_REQUEST).send({
-            message: 'Переданы некорректные данные',
-          });
-        } else if (err.name === 'DocumentNotFoundError') {
           res.status(STATUS_CODES.NOT_FOUND).send({
             message: 'Пользователь не найден',
           });
