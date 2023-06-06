@@ -1,5 +1,4 @@
 const fs = require('fs');
-const mongoose = require('mongoose');
 const cardModel = require('../models/card');
 const STATUS_CODES = require('../utils/costants');
 
@@ -33,13 +32,13 @@ const errorHandlingWithDataUSERS = (req, res, err) => {
 };
 
 const errorHandlingWithData = (req, res, err) => {
-  // CastError (400) - добавление/удаление лайка с некорректным id карточки
-  // DocumentNotFoundError (404) - добавление/удаление лайка с несуществующим в БД id карточки
+  // 400 - добавление/удаление лайка с некорректным id карточки
+  // 404 - добавление/удаление лайка с несуществующим в БД id карточки
   if (err.name === 'CastError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
     });
-  } else if (err.name === 'DocumentNotFoundError') {
+  } else if (err.message === 'Карточка не найдена') {
     res.status(STATUS_CODES.NOT_FOUND).send({
       message: 'Карточка не найдена',
     });
@@ -57,9 +56,7 @@ const getCards = async (req, res) => {
     const cards = await cardModel.find({});
     res.status(STATUS_CODES.OK).send({ data: cards });
   } catch (err) {
-    if (err instanceof mongoose.Error) {
-      errorHandlingWithDataUSERS(req, res, err);
-    }
+    errorHandlingWithDataUSERS(req, res, err);
   }
 };
 
@@ -68,23 +65,23 @@ const deleteCardByID = (req, res) => {
   const owner = req.user._id;
   cardModel
     .findById(req.params.cardId)
-    .orFail(() => {
-      res.status(STATUS_CODES.NOT_FOUND);
-    })
     .then((card) => {
-      if (JSON.stringify(card.owner) !== `"${owner}"`) {
-        res.status(STATUS_CODES.NOT_FOUND).send({
-          message: 'Чужая карточка - нельзя удалить',
-        });
+      if (!card) {
+        throw new Error('Карточка не найдена');
       }
       cardModel
         .findByIdAndRemove(req.params.cardId)
-        .then(() => res.status(STATUS_CODES.OK).send({ data: card }));
+        .then(() => {
+          if (JSON.stringify(card.owner) !== `"${owner}"`) {
+            res.status(STATUS_CODES.NOT_FOUND).send({
+              message: 'Чужая карточка - нельзя удалить',
+            });
+          }
+          return res.status(STATUS_CODES.OK).send({ data: card });
+        });
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error) {
-        errorHandlingWithData(req, res, err);
-      }
+      errorHandlingWithData(req, res, err);
     });
 };
 
@@ -98,9 +95,7 @@ const postCard = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error) {
-        errorHandlingWithDataUSERS(req, res, err);
-      }
+      errorHandlingWithDataUSERS(req, res, err);
     });
 };
 
@@ -114,16 +109,14 @@ const putCardLike = (req, res) => {
       { $addToSet: { likes: owner } },
       { new: true },
     )
-    .orFail(() => {
-      res.status(STATUS_CODES.NOT_FOUND);
-    })
     .then((card) => {
+      if (!card) {
+        throw new Error('Карточка не найдена');
+      }
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error) {
-        errorHandlingWithData(req, res, err);
-      }
+      errorHandlingWithData(req, res, err);
     });
 };
 
@@ -137,16 +130,14 @@ const deleteCardLike = (req, res) => {
       { $pull: { likes: owner } },
       { new: true },
     )
-    .orFail(() => {
-      res.status(STATUS_CODES.NOT_FOUND);
-    })
     .then((card) => {
+      if (!card) {
+        throw new Error('Карточка не найдена');
+      }
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error) {
-        errorHandlingWithData(req, res, err);
-      }
+      errorHandlingWithData(req, res, err);
     });
 };
 

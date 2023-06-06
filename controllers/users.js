@@ -1,5 +1,4 @@
 const fs = require('fs');
-const mongoose = require('mongoose');
 const userModel = require('../models/user');
 const STATUS_CODES = require('../utils/costants');
 
@@ -17,19 +16,6 @@ const writeLog = (req, err) => {
       if (error) console.log(error);
     },
   );
-};
-
-const errorHandlingWithDataUSERS = (req, res, err) => {
-  if (err.name === 'ValidationError') {
-    res.status(STATUS_CODES.BAD_REQUEST).send({
-      message: 'Переданы некорректные данные',
-    });
-  } else {
-    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
-      message: 'Внутренняя ошибка сервера',
-    });
-  }
-  writeLog(req, err);
 };
 
 const errorHandlingWithData = (req, res, err) => {
@@ -51,9 +37,7 @@ const getUsers = async (req, res) => {
     const users = await userModel.find({});
     res.status(STATUS_CODES.OK).send({ data: users });
   } catch (err) {
-    if (err instanceof mongoose.Error) {
-      errorHandlingWithDataUSERS(req, res, err);
-    }
+    errorHandlingWithData(req, res, err);
   }
 };
 
@@ -62,26 +46,24 @@ const getUserByID = (req, res) => {
   const id = req.params.userId;
   userModel
     .findById(id)
-    .orFail(() => {
-      res.status(STATUS_CODES.NOT_FOUND);
-    })
     .then((user) => {
+      if (!user) {
+        throw new Error('Пользователь не найден');
+      }
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error) {
-        // CastError (404) - получение пользователя с некорректным id
-        if (err.name === 'CastError') {
-          res.status(STATUS_CODES.NOT_FOUND).send({
-            message: 'Пользователь не найден',
-          });
-        } else {
-          res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
-            message: 'Внутренняя ошибка сервера',
-          });
-        }
-        writeLog(req, err);
+      // 404 - пользователь по указанному _id не найден
+      if (err.message === 'Пользователь не найден') {
+        res.status(STATUS_CODES.NOT_FOUND).send({
+          message: 'Пользователь не найден',
+        });
+      } else {
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+          message: 'Внутренняя ошибка сервера',
+        });
       }
+      writeLog(req, err);
     });
 };
 
@@ -94,9 +76,7 @@ const postUser = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error) {
-        errorHandlingWithDataUSERS(req, res, err);
-      }
+      errorHandlingWithData(req, res, err);
     });
 };
 
@@ -115,9 +95,7 @@ const patchUserMe = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error) {
-        errorHandlingWithData(req, res, err);
-      }
+      errorHandlingWithData(req, res, err);
     });
 };
 
@@ -131,9 +109,7 @@ const patchAvatar = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      if (err instanceof mongoose.Error) {
-        errorHandlingWithData(req, res, err);
-      }
+      errorHandlingWithData(req, res, err);
     });
 };
 

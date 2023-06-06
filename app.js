@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const router = require('./routes');
 
 mongoose.connect('mongodb://127.0.0.1/mestodb');
 
@@ -15,7 +16,7 @@ app.use((req, res, next) => {
   next();
 });
 
-require('./routes')(app);
+app.use('/', router);
 
 app.listen(3000, () => {
   // eslint-disable-next-line no-console
