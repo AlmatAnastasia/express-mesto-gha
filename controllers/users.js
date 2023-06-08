@@ -32,15 +32,10 @@ const errorHandlingWithData = (req, res, err) => {
 };
 
 const errorHandlingWithIdData = (req, res, err) => {
-  // 400 - получение пользователя с некорректным id
-  // 404 - получение пользователя с несуществующим в БД id
-  if (err.name === 'CastError') {
+  // 400 - некорректные данные (обновление данных пользователя)
+  if (err.name === 'CastError' || err.name === 'ValidationError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
-    });
-  } else if (err.message === 'Пользователь не найден') {
-    res.status(STATUS_CODES.NOT_FOUND).send({
-      message: 'Пользователь не найден',
     });
   } else {
     res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
@@ -72,7 +67,22 @@ const getUserByID = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithIdData(req, res, err);
+      // 400 - получение пользователя с некорректным id
+      // 404 - получение пользователя с несуществующим в БД id
+      if (err.name === 'CastError') {
+        res.status(STATUS_CODES.BAD_REQUEST).send({
+          message: 'Переданы некорректные данные',
+        });
+      } else if (err.message === 'Пользователь не найден') {
+        res.status(STATUS_CODES.NOT_FOUND).send({
+          message: 'Пользователь не найден',
+        });
+      } else {
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+          message: 'Внутренняя ошибка сервера',
+        });
+      }
+      writeLog(req, err);
     });
 };
 
@@ -101,9 +111,6 @@ const patchUserMe = (req, res) => {
       { new: true, runValidators: true },
     )
     .then((user) => {
-      if (!user) {
-        throw new Error('Пользователь не найден');
-      }
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
@@ -118,9 +125,6 @@ const patchAvatar = (req, res) => {
   userModel
     .findByIdAndUpdate(owner, { avatar }, { new: true, runValidators: true })
     .then((user) => {
-      if (!user) {
-        throw new Error('Пользователь не найден');
-      }
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
