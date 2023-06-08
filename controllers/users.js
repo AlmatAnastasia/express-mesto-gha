@@ -31,6 +31,25 @@ const errorHandlingWithData = (req, res, err) => {
   writeLog(req, err);
 };
 
+const errorHandlingWithIdData = (req, res, err) => {
+  // 400 - получение пользователя с некорректным id
+  // 404 - получение пользователя с несуществующим в БД id
+  if (err.name === 'CastError') {
+    res.status(STATUS_CODES.BAD_REQUEST).send({
+      message: 'Переданы некорректные данные',
+    });
+  } else if (err.message === 'Пользователь не найден') {
+    res.status(STATUS_CODES.NOT_FOUND).send({
+      message: 'Пользователь не найден',
+    });
+  } else {
+    res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+      message: 'Внутренняя ошибка сервера',
+    });
+  }
+  writeLog(req, err);
+};
+
 // вернуть всех пользователей
 const getUsers = async (req, res) => {
   try {
@@ -53,17 +72,7 @@ const getUserByID = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      // 404 - пользователь по указанному _id не найден
-      if (err.message === 'Пользователь не найден') {
-        res.status(STATUS_CODES.NOT_FOUND).send({
-          message: 'Пользователь не найден',
-        });
-      } else {
-        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
-          message: 'Внутренняя ошибка сервера',
-        });
-      }
-      writeLog(req, err);
+      errorHandlingWithIdData(req, res, err);
     });
 };
 
@@ -92,10 +101,13 @@ const patchUserMe = (req, res) => {
       { new: true, runValidators: true },
     )
     .then((user) => {
+      if (!user) {
+        throw new Error('Пользователь не найден');
+      }
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      errorHandlingWithIdData(req, res, err);
     });
 };
 
@@ -106,10 +118,13 @@ const patchAvatar = (req, res) => {
   userModel
     .findByIdAndUpdate(owner, { avatar }, { new: true, runValidators: true })
     .then((user) => {
+      if (!user) {
+        throw new Error('Пользователь не найден');
+      }
       res.status(STATUS_CODES.OK).send({ data: user });
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      errorHandlingWithIdData(req, res, err);
     });
 };
 

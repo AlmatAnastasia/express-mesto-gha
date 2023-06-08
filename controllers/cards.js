@@ -18,7 +18,7 @@ const writeLog = (req, err) => {
   );
 };
 
-const errorHandlingWithDataUSERS = (req, res, err) => {
+const errorHandlingWithData = (req, res, err) => {
   if (err.name === 'ValidationError') {
     res.status(STATUS_CODES.BAD_REQUEST).send({
       message: 'Переданы некорректные данные',
@@ -31,7 +31,7 @@ const errorHandlingWithDataUSERS = (req, res, err) => {
   writeLog(req, err);
 };
 
-const errorHandlingWithData = (req, res, err) => {
+const errorHandlingWithIdData = (req, res, err) => {
   // 400 - добавление/удаление лайка с некорректным id карточки
   // 404 - добавление/удаление лайка с несуществующим в БД id карточки
   if (err.name === 'CastError') {
@@ -56,13 +56,12 @@ const getCards = async (req, res) => {
     const cards = await cardModel.find({});
     res.status(STATUS_CODES.OK).send({ data: cards });
   } catch (err) {
-    errorHandlingWithDataUSERS(req, res, err);
+    errorHandlingWithData(req, res, err);
   }
 };
 
 // удалить карточку по идентификатору
 const deleteCardByID = (req, res) => {
-  const owner = req.user._id;
   cardModel
     .findById(req.params.cardId)
     .then((card) => {
@@ -71,17 +70,13 @@ const deleteCardByID = (req, res) => {
       }
       cardModel
         .findByIdAndRemove(req.params.cardId)
+        // eslint-disable-next-line arrow-body-style
         .then(() => {
-          if (JSON.stringify(card.owner) !== `"${owner}"`) {
-            res.status(STATUS_CODES.NOT_FOUND).send({
-              message: 'Чужая карточка - нельзя удалить',
-            });
-          }
           return res.status(STATUS_CODES.OK).send({ data: card });
         });
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      errorHandlingWithIdData(req, res, err);
     });
 };
 
@@ -95,7 +90,7 @@ const postCard = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      errorHandlingWithDataUSERS(req, res, err);
+      errorHandlingWithData(req, res, err);
     });
 };
 
@@ -116,7 +111,7 @@ const putCardLike = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      errorHandlingWithIdData(req, res, err);
     });
 };
 
@@ -137,7 +132,7 @@ const deleteCardLike = (req, res) => {
       res.status(STATUS_CODES.OK).send({ data: card });
     })
     .catch((err) => {
-      errorHandlingWithData(req, res, err);
+      errorHandlingWithIdData(req, res, err);
     });
 };
 
