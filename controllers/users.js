@@ -1,8 +1,11 @@
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const userModel = require('../models/user');
 const STATUS_CODES = require('../utils/costants');
 
+const SALT_ROUNDS = 10;
+const SECRET_KEY = 'super_secret';
 // обработка ошибок
 const writeLog = (req, err) => {
   fs.writeFile(
@@ -92,7 +95,7 @@ const postUser = (req, res) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  bcrypt.hash(password, 10)
+  bcrypt.hash(password, SALT_ROUNDS)
     .then((hash) => {
       userModel
         .create({
@@ -148,10 +151,39 @@ const patchAvatar = (req, res) => {
     });
 };
 
+// авторизация пользователя (проверить почту и пароль)
+const loginUser = (req, res) => {
+  const { email, password } = req.body;
+  userModel
+    .findOne({ email }).select('+password')
+    // eslint-disable-next-line arrow-body-style
+    .then((user) => {
+      return Promise.all([user, bcrypt.compare(password, user.password)]);
+    })
+    .then(([user, match]) => {
+      if (!match) {
+        res.status(401).send({ message: 'Неправильные почта или пароль' });
+        return;
+      }
+      const token = jwt.sign({ _id: user._id }, SECRET_KEY, { expiresIn: '7d' });
+      res.status(STATUS_CODES.OK).send({ token });
+    })
+    .catch((err) => {
+      if (err.name === 'TypeError') {
+        res.status(401).send({ message: 'Неправильные почта или пароль' });
+        return;
+      }
+      res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+        message: 'Внутренняя ошибка сервера',
+      });
+    });
+};
+
 module.exports = {
   getUsers,
   getUserByID,
   postUser,
   patchUserMe,
   patchAvatar,
+  loginUser,
 };
