@@ -1,4 +1,5 @@
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
 const userModel = require('../models/user');
 const STATUS_CODES = require('../utils/costants');
 
@@ -88,14 +89,29 @@ const getUserByID = (req, res) => {
 
 // создать пользователя
 const postUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  userModel
-    .create({ name, about, avatar })
-    .then((user) => {
-      res.status(STATUS_CODES.OK).send({ data: user });
-    })
-    .catch((err) => {
-      errorHandlingWithData(req, res, err);
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => {
+      userModel
+        .create({
+          name, about, avatar, email, password: hash,
+        })
+        .then(() => {
+          res.status(STATUS_CODES.OK).send({
+            data: {
+              name, about, avatar, email,
+            },
+          });
+        })
+        .catch((err) => {
+          if (err.code === STATUS_CODES.MONGO_DUPLICATE_KEY_ERROR) {
+            res.status(409).send({ message: 'Такой пользователь уже существует' });
+            return;
+          }
+          errorHandlingWithData(req, res, err);
+        });
     });
 };
 
