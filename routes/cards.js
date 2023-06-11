@@ -6,16 +6,19 @@ const {
   putCardLike,
   deleteCardLike,
 } = require('../controllers/cards');
-
+const {
+  validatorCardByID,
+  validatorPostCard,
+} = require('../middlewares/validate');
 // вернуть все карточки
 router.get('', getCards);
 // удалить карточку по идентификатору
-router.delete('/:cardId', deleteCardByID);
+router.delete('/:cardId', validatorCardByID, deleteCardByID);
 // создать карточку
-router.post('', postCard);
+router.post('', validatorPostCard, postCard);
 // поставить лайк карточке
-router.put('/:cardId/likes', putCardLike);
+router.put('/:cardId/likes', validatorCardByID, putCardLike);
 // убрать лайк с карточки
-router.delete('/:cardId/likes', deleteCardLike);
+router.delete('/:cardId/likes', validatorCardByID, deleteCardLike);
 
 module.exports = router;

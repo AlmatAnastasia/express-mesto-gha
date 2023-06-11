@@ -21,14 +21,15 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
+    minlength: 2,
     required: true,
     unique: true,
   },
   password: {
     type: String,
+    minlength: 8,
     required: true,
     select: false,
-    minlength: 8,
   },
 });
 // создать модель user и экспортировать её

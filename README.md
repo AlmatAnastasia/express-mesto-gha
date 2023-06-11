@@ -37,6 +37,7 @@
 <pre>
 .
 ├── controllers        # Директория содержит файлы описания моделей пользователя и карточки<br>
+├── middlewares        # Директория содержит файлы мидлвэров (функций промежуточной обработки)<br>
 ├── models             # Директория содержит файлы описания схем пользователя и карточки<br>
 ├── routes             # Директория содержит описание основных роутов для пользователя и карточки<br>
 ├── utils              # Файлы утилитарных модулей (отдельные функции и константы)<br>
@@ -55,7 +56,9 @@
 ⬥ Postman <br>
 ⬥ Express<br>
 ⬥ Node.js<br>
-⬥ MongoDB (Mongoose)
+⬥ MongoDB (Mongoose)<br>
+⬥ MongoDB Compass<br>
+⬥ bcryptjs, jsonwebtoken, celebrate, validator
 </p>
   
 <div id="functionality"></div>

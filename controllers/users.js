@@ -1,11 +1,10 @@
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const userModel = require('../models/user');
 const STATUS_CODES = require('../utils/costants');
+const { signToken } = require('../utils/jwtAuth');
 
 const SALT_ROUNDS = 10;
-const SECRET_KEY = 'super_secret';
 // обработка ошибок
 const writeLog = (req, err) => {
   fs.writeFile(
@@ -59,6 +58,24 @@ const getUsers = async (req, res) => {
   }
 };
 
+// вернуть информацию о текущем пользователе
+const getUserMe = (req, res) => {
+  const owner = req.user._id;
+  userModel
+    .findById(owner)
+    .then((user) => {
+      if (!user) {
+        throw new Error('Пользователь не найден');
+      }
+      res.status(STATUS_CODES.OK).send({ data: user });
+    })
+    .catch(() => {
+      res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+        message: 'Внутренняя ошибка сервера',
+      });
+    });
+};
+
 // вернуть пользователя по _id
 const getUserByID = (req, res) => {
   const id = req.params.userId;
@@ -90,7 +107,7 @@ const getUserByID = (req, res) => {
     });
 };
 
-// создать пользователя
+// регистрация пользователя (создать пользователя)
 const postUser = (req, res) => {
   const {
     name, about, avatar, email, password,
@@ -110,7 +127,7 @@ const postUser = (req, res) => {
         })
         .catch((err) => {
           if (err.code === STATUS_CODES.MONGO_DUPLICATE_KEY_ERROR) {
-            res.status(409).send({ message: 'Такой пользователь уже существует' });
+            res.status(STATUS_CODES.CONFLICTING_REQUEST).send({ message: 'Такой пользователь уже существует' });
             return;
           }
           errorHandlingWithData(req, res, err);
@@ -162,15 +179,15 @@ const loginUser = (req, res) => {
     })
     .then(([user, match]) => {
       if (!match) {
-        res.status(401).send({ message: 'Неправильные почта или пароль' });
+        res.status(STATUS_CODES.UNAUTHORIZED_ERROR).send({ message: 'Неправильные почта или пароль' });
         return;
       }
-      const token = jwt.sign({ _id: user._id }, SECRET_KEY, { expiresIn: '7d' });
+      const token = signToken({ _id: user._id });
       res.status(STATUS_CODES.OK).send({ token });
     })
     .catch((err) => {
       if (err.name === 'TypeError') {
-        res.status(401).send({ message: 'Неправильные почта или пароль' });
+        res.status(STATUS_CODES.UNAUTHORIZED_ERROR).send({ message: 'Неправильные почта или пароль' });
         return;
       }
       res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).send({
@@ -181,6 +198,7 @@ const loginUser = (req, res) => {
 
 module.exports = {
   getUsers,
+  getUserMe,
   getUserByID,
   postUser,
   patchUserMe,

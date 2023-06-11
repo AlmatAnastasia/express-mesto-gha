@@ -62,11 +62,18 @@ const getCards = async (req, res) => {
 
 // удалить карточку по идентификатору
 const deleteCardByID = (req, res) => {
+  const owner = req.user._id;
   cardModel
     .findById(req.params.cardId)
     .then((card) => {
+      const ownerCard = card.owner.toString();
       if (!card) {
         throw new Error('Карточка не найдена');
+      }
+      if (ownerCard !== owner) {
+        res.status(STATUS_CODES.FORBIDDEN).send({
+          message: 'Нельзя удалить чужую карточку',
+        });
       }
       cardModel
         .findByIdAndRemove(req.params.cardId)
