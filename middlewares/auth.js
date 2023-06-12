@@ -1,10 +1,10 @@
-const STATUS_CODES = require('../utils/costants');
+const UnauthorizedError = require('../errors/Unauthorized_Error');
 const { checkToken } = require('../utils/jwtAuth');
 
 const auth = (req, res, next) => {
   const { authorization } = req.headers;
   if (!authorization) {
-    res.status(STATUS_CODES.UNAUTHORIZED_ERROR).send({ message: 'Пользователь не авторизован' });
+    next(new UnauthorizedError('Неправильные почта или пароль'));
   }
   const token = authorization.replace('Bearer ', '');
   try {
@@ -12,7 +12,7 @@ const auth = (req, res, next) => {
     req.user = payload;
     next();
   } catch (err) {
-    res.status(STATUS_CODES.UNAUTHORIZED_ERROR).send({ message: 'Пользователь не авторизован' });
+    next(new UnauthorizedError('Неправильные почта или пароль'));
   }
 };
 
