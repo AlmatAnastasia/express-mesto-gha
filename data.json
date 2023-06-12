@@ -1,0 +1,1 @@
+"{\n    url: /cards/6485b51d1fa65efe1eb2e6db,\n    err: Карточка не найдена,\n    stack: Error: Карточка не найдена\n    at C:\\Users\\Nastr\\Desktop\\dev\\express-mesto-gha\\controllers\\cards.js:45:14\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5),\n  }"

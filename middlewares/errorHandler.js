@@ -21,7 +21,6 @@ const writeLog = (req, err) => {
 const errorHandler = (err, req, res, next) => {
   const { statusCode = STATUS_CODES.INTERNAL_SERVER_ERROR, message } = err;
   writeLog(req, err);
-  console.log('errorHandler: ', statusCode, message);
   return res.status(statusCode).send({
     message:
       statusCode === STATUS_CODES.INTERNAL_SERVER_ERROR

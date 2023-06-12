@@ -50,9 +50,6 @@ const getUserByID = (req, res, next) => {
     .catch((err) => {
       // 400 - получение пользователя с некорректным id
       // 404 - получение пользователя с несуществующим в БД id
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Переданы некорректные данные'));
-      }
       if (err.message === 'Пользователь не найден') {
         next(new NotFoundError('Пользователь не найден'));
       }
@@ -128,13 +125,16 @@ const loginUser = (req, res, next) => {
     })
     .then(([user, match]) => {
       if (!match) {
-        next(new UnauthorizedError('Неправильные почта или пароль'));
-        return;
+        throw new UnauthorizedError('Неправильные почта или пароль');
       }
       const token = signToken({ _id: user._id });
       res.status(STATUS_CODES.OK).send({ token });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.message === 'Неправильные почта или пароль' || err.name === 'TypeError') {
+        next(new UnauthorizedError('Неправильные почта или пароль'));
+      }
+    });
 };
 
 module.exports = {
