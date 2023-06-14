@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const isURL = require('validator/lib/isURL');
 // создать схему cardSchema
 const cardSchema = new mongoose.Schema({
   // поля схемы карточки:
@@ -13,6 +14,10 @@ const cardSchema = new mongoose.Schema({
   link: {
     type: String,
     required: true,
+    validate: {
+      validator: (url) => isURL(url),
+      message: 'Недопустимый URL-адрес',
+    },
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,

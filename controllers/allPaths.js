@@ -1,10 +1,8 @@
-const STATUS_CODES = require('../utils/costants');
+const NotFoundError = require('../errors/Not_Found_Error');
 
 // обработать неправильные пути
-const getNotFound = (req, res) => {
-  res
-    .status(STATUS_CODES.NOT_FOUND)
-    .send({ message: `${STATUS_CODES.NOT_FOUND}` });
+const getNotFound = () => {
+  throw new NotFoundError('Путь не найден');
 };
 
 module.exports = { getNotFound };

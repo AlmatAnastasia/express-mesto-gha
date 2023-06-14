@@ -1,5 +1,4 @@
 const router = require('express').Router();
-const { errors } = require('celebrate');
 const userRouter = require('./users');
 const cardRouter = require('./cards');
 const allPaths = require('./allPaths');
@@ -18,7 +17,6 @@ router.post('/signin', validatorSignIn, loginUser);
 router.use(auth);
 router.use('/users', userRouter);
 router.use('/cards', cardRouter);
-router.use(errors());
 router.use(errorHandler);
 router.use(allPaths);
 

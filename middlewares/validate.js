@@ -1,8 +1,7 @@
 const { celebrate, Joi } = require('celebrate');
 
 // регулярное выражение для проверки ссылки (данных поля avatar)
-// eslint-disable-next-line no-useless-escape
-const regex = /^(http|https):\/\/(www)?[0-9a-z -._~:\/?#[\]@!$&'()*+,;=]*(#)?/i;
+const regex = /^(http|https):\/\/(www.)?[0-9a-z -._~:[\]/?#[\]@!$&'()*+,;=]{1,10}\.ru(\/[a-z/]*)?(#)?/i;
 
 // регистрация пользователя
 const validatorSignUp = celebrate({
@@ -27,7 +26,7 @@ const validatorSignIn = celebrate({
 // вернуть информацию о текущем пользователе
 const validatorUserByID = celebrate({
   params: Joi.object().keys({
-    userId: Joi.string().length(24),
+    userId: Joi.string().length(24).hex(),
   }),
 });
 
@@ -51,7 +50,7 @@ const validatorPatchAvatar = celebrate({
 // убрать лайк с карточки
 const validatorCardByID = celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().length(24),
+    cardId: Joi.string().length(24).hex().required(),
   }),
 });
 

@@ -10,15 +10,11 @@ const { signToken } = require('../utils/jwtAuth');
 const SALT_ROUNDS = 10;
 
 // вернуть всех пользователей
-const getUsers = async (req, res, next) => {
-  try {
-    const users = await userModel.find({});
-    res.status(STATUS_CODES.OK).send({ data: users });
-  } catch (err) {
-    if (err.name === 'ValidationError') {
-      next(new BadRequestError('Переданы некорректные данные'));
-    }
-  }
+const getUsers = (req, res, next) => {
+  userModel
+    .find({})
+    .then((users) => res.send({ data: users }))
+    .catch(next);
 };
 
 // вернуть информацию о текущем пользователе
@@ -30,7 +26,7 @@ const getUserMe = (req, res, next) => {
       if (!user) {
         throw new NotFoundError('Пользователь не найден');
       }
-      res.status(STATUS_CODES.OK).send({ data: user });
+      return res.send({ data: user });
     })
     .catch(next);
 };
@@ -38,20 +34,21 @@ const getUserMe = (req, res, next) => {
 // вернуть пользователя по _id
 const getUserByID = (req, res, next) => {
   const id = req.params.userId;
-  // const type = mongoose.Types.ObjectId.isValid(id);
   userModel
     .findById(id)
     .then((user) => {
       if (!user) {
         throw new NotFoundError('Пользователь не найден');
       }
-      res.status(STATUS_CODES.OK).send({ data: user });
+      return res.send({ data: user });
     })
     .catch((err) => {
       // 400 - получение пользователя с некорректным id
       // 404 - получение пользователя с несуществующим в БД id
       if (err.message === 'Пользователь не найден') {
         next(new NotFoundError('Пользователь не найден'));
+      } else {
+        next(err);
       }
     });
 };
@@ -67,10 +64,14 @@ const patchUserMe = (req, res, next) => {
       { name, about },
       { new: true, runValidators: true },
     )
-    .then((user) => {
-      res.status(STATUS_CODES.OK).send({ data: user });
-    })
-    .catch(next);
+    .then((user) => res.send({ data: user }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 // обновить аватар
@@ -79,10 +80,14 @@ const patchAvatar = (req, res, next) => {
   const { avatar } = req.body;
   userModel
     .findByIdAndUpdate(owner, { avatar }, { new: true, runValidators: true })
-    .then((user) => {
-      res.status(STATUS_CODES.OK).send({ data: user });
-    })
-    .catch(next);
+    .then((user) => res.send({ data: user }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 // регистрация пользователя (создать пользователя)
@@ -98,20 +103,23 @@ const postUser = (req, res, next) => {
           name, about, avatar, email, password: hash,
         })
         .then(() => {
-          res.status(STATUS_CODES.OK).send({
+          res.send({
             data: {
               name, about, avatar, email,
             },
           });
         })
         .catch((err) => {
-          if (err.code === STATUS_CODES.MONGO_DUPLICATE_KEY_ERROR) {
+          if (err.name === 'ValidationError') {
+            next(new BadRequestError('Переданы некорректные данные'));
+          } else if (err.code === STATUS_CODES.MONGO_DUPLICATE_KEY_ERROR) {
             next(new ConflictingRequestError('Такой пользователь уже существует'));
-            // eslint-disable-next-line no-useless-return
-            return;
+          } else {
+            next(err);
           }
         });
-    });
+    })
+    .catch(next);
 };
 
 // авторизация пользователя (проверить почту и пароль)
@@ -119,22 +127,24 @@ const loginUser = (req, res, next) => {
   const { email, password } = req.body;
   userModel
     .findOne({ email }).select('+password')
-    // eslint-disable-next-line arrow-body-style
     .then((user) => {
-      return Promise.all([user, bcrypt.compare(password, user.password)]);
+      if (!user) {
+        throw new UnauthorizedError('Неправильные почта или пароль');
+      }
+      return user;
+    })
+    .then((user) => {
+      const match = Promise.all([user, bcrypt.compare(password, user.password)]);
+      return match;
     })
     .then(([user, match]) => {
       if (!match) {
         throw new UnauthorizedError('Неправильные почта или пароль');
       }
       const token = signToken({ _id: user._id });
-      res.status(STATUS_CODES.OK).send({ token });
+      res.send({ token });
     })
-    .catch((err) => {
-      if (err.message === 'Неправильные почта или пароль' || err.name === 'TypeError') {
-        next(new UnauthorizedError('Неправильные почта или пароль'));
-      }
-    });
+    .catch(next);
 };
 
 module.exports = {
