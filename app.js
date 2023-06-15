@@ -6,7 +6,6 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { errors } = require('celebrate');
 const router = require('./routes');
-const auth = require('./middlewares/auth');
 const errorHandler = require('./middlewares/errorHandler');
 
 const limiter = rateLimit({
@@ -21,8 +20,6 @@ app.use(express.json());
 
 app.use(limiter);
 app.use(helmet());
-// авторизация
-router.use(auth);
 app.use('/', router);
 router.use(errors());
 app.use(errorHandler);
