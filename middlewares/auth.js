@@ -4,16 +4,17 @@ const { checkToken } = require('../utils/jwtAuth');
 const auth = (req, res, next) => {
   const { authorization } = req.headers;
   if (!authorization) {
-    next(new UnauthorizedError('Неправильные почта или пароль'));
+    throw new UnauthorizedError('Неправильные почта или пароль');
   }
   const token = authorization.replace('Bearer ', '');
+  let payload;
   try {
-    const payload = checkToken(token);
-    req.user = payload;
-    next();
+    payload = checkToken(token);
   } catch (err) {
     next(new UnauthorizedError('Неправильные почта или пароль'));
   }
+  req.user = payload;
+  next();
 };
 
 module.exports = auth;

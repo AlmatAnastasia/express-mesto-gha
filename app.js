@@ -6,10 +6,12 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { errors } = require('celebrate');
 const router = require('./routes');
+const auth = require('./middlewares/auth');
+const errorHandler = require('./middlewares/errorHandler');
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // "окно"  -15 минут
- max: 100, // ограничить каждый IP-адрес 100 запросами за "окно" (за 15 минут)
+  windowMs: 15 * 60 * 1000, // "окно" - 15 минут
+  max: 100, // ограничить каждый IP-адрес 100 запросами за "окно" (за 15 минут)
 });
 
 mongoose.connect('mongodb://127.0.0.1/mestodb');
@@ -19,8 +21,11 @@ app.use(express.json());
 
 app.use(limiter);
 app.use(helmet());
+// авторизация
+router.use(auth);
 app.use('/', router);
-app.use(errors());
+router.use(errors());
+app.use(errorHandler);
 
 app.listen(3000, () => {
   console.log('Сервер запущен по порту 3000');

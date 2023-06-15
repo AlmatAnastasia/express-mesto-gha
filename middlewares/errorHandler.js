@@ -19,12 +19,13 @@ const writeLog = (req, err) => {
 const errorHandler = (err, req, res, next) => {
   const { statusCode = STATUS_CODES.INTERNAL_SERVER_ERROR, message } = err;
   writeLog(req, err);
-  next(res.status(statusCode).send({
+  res.status(statusCode).send({
     message:
       statusCode === STATUS_CODES.INTERNAL_SERVER_ERROR
         ? 'Внутренняя ошибка сервера'
         : message,
-  }));
+  });
+  next();
 };
 
 module.exports = errorHandler;

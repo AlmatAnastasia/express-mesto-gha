@@ -17,7 +17,7 @@ const validatorSignUp = celebrate({
 // авторизация пользователя
 const validatorSignIn = celebrate({
   body: Joi.object().keys({
-    email: Joi.string().required().email(),
+    email: Joi.string().email().required(),
     password: Joi.string().required(),
   }),
 });
