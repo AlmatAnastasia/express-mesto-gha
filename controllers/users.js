@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const userModel = require('../models/user');
 const STATUS_CODES = require('../utils/costants');
-const BadRequestError = require('../errors/Bad_Request_Error');
 const UnauthorizedError = require('../errors/Unauthorized_Error');
 const ConflictingRequestError = require('../errors/Conflicting_Request_Error');
 const NotFoundError = require('../errors/Not_Found_Error');
@@ -42,15 +41,7 @@ const getUserByID = (req, res, next) => {
       }
       return res.send({ data: user });
     })
-    .catch((err) => {
-      // 400 - получение пользователя с некорректным id
-      // 404 - получение пользователя с несуществующим в БД id
-      if (err.message === 'Пользователь не найден') {
-        next(new NotFoundError('Пользователь не найден'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 // обновить профиль
@@ -65,13 +56,7 @@ const patchUserMe = (req, res, next) => {
       { new: true, runValidators: true },
     )
     .then((user) => res.send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Переданы некорректные данные'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 // обновить аватар
@@ -81,13 +66,7 @@ const patchAvatar = (req, res, next) => {
   userModel
     .findByIdAndUpdate(owner, { avatar }, { new: true, runValidators: true })
     .then((user) => res.send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Переданы некорректные данные'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 // регистрация пользователя (создать пользователя)
@@ -110,9 +89,7 @@ const postUser = (req, res, next) => {
           });
         })
         .catch((err) => {
-          if (err.name === 'ValidationError') {
-            next(new BadRequestError('Переданы некорректные данные'));
-          } else if (err.code === STATUS_CODES.MONGO_DUPLICATE_KEY_ERROR) {
+          if (err.code === STATUS_CODES.MONGO_DUPLICATE_KEY_ERROR) {
             next(new ConflictingRequestError('Такой пользователь уже существует'));
           } else {
             next(err);

@@ -1,5 +1,4 @@
 const cardModel = require('../models/card');
-const BadRequestError = require('../errors/Bad_Request_Error');
 const ForbiddenError = require('../errors/Forbidden_Error');
 const NotFoundError = require('../errors/Not_Found_Error');
 
@@ -31,19 +30,7 @@ const deleteCardByID = (req, res, next) => {
         .findByIdAndRemove(req.params.cardId)
         .then(() => res.send({ data: card }));
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Переданы некорректные данные'));
-      }
-      if (err.message === 'Карточка не найдена') {
-        next(new NotFoundError('Карточка не найдена'));
-      }
-      if (err.message === 'Нельзя удалить чужую карточку') {
-        next(new ForbiddenError('Нельзя удалить чужую карточку'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 // создать карточку
@@ -53,13 +40,7 @@ const postCard = (req, res, next) => {
   cardModel
     .create({ name, link, owner })
     .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Переданы некорректные данные'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 // поставить лайк карточке
@@ -78,16 +59,7 @@ const putCardLike = (req, res, next) => {
       }
       return res.send({ data: card });
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Переданы некорректные данные'));
-      }
-      if (err.message === 'Карточка не найдена') {
-        next(new NotFoundError('Карточка не найдена'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 // убрать лайк с карточки
@@ -106,16 +78,7 @@ const deleteCardLike = (req, res, next) => {
       }
       return res.send({ data: card });
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Переданы некорректные данные'));
-      }
-      if (err.message === 'Карточка не найдена') {
-        next(new NotFoundError('Карточка не найдена'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 module.exports = {
